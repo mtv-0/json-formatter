@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="src/main.css" />
+    <script defer src="src/main.js"></script>
+    <title>JSON Formatter</title>
+  </head>
+  <body>
+    <div class="container">
+      <textarea
+        class="large-area large-area--input"
+        placeholder="Enter your JSON here..."
+      ></textarea>
+      <div class="controls">
+        <button type="button" class="controls__button controls__button--format">
+          Format
+        </button>
+        <button type="button" class="controls__button controls__button--minify">
+          Minify
+        </button>
+      </div>
+      <textarea
+        class="large-area large-area--output"
+        placeholder="Formatted JSON will appear here..."
+        readonly
+      ></textarea>
+    </div>
+  </body>
+</html>
