@@ -25,6 +25,8 @@ body {
   resize: none;
   font-family: monospace;
   transition: background 0.25s, color 0.25s;
+  white-space: pre-wrap;
+  overflow-y: auto;
 }
 
 .large-area:hover,
@@ -50,4 +52,21 @@ body {
 
 .controls__button:active {
   background: #00705a;
+}
+
+/* 🎨 Cores do highlight */
+.string {
+  color: #ce9178;
+}
+.number {
+  color: #b5cea8;
+}
+.boolean {
+  color: #569cd6;
+}
+.null {
+  color: #569cd6;
+}
+.key {
+  color: #9cdcfe;
 }
