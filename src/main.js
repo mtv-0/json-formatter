@@ -31,6 +31,11 @@ function syntaxHighlight(json) {
 formatButton.addEventListener("click", () => {
   try {
     const json = JSON.parse(inputArea.value);
+
+    if (typeof json === "string") {
+      json = JSON.parse(json);
+    }
+    
     const formattedJson = JSON.stringify(json, null, 2);
     outputArea.innerHTML = syntaxHighlight(formattedJson);
   } catch (error) {
@@ -42,6 +47,11 @@ ${error.message}`;
 minifyButton.addEventListener("click", () => {
   try {
     const json = JSON.parse(inputArea.value);
+
+    if (typeof json === "string") {
+      json = JSON.parse(json);
+    }
+    
     const minifiedJson = JSON.stringify(json);
     outputArea.textContent = minifiedJson;
   } catch (error) {
