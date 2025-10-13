@@ -28,18 +28,38 @@ function syntaxHighlight(json) {
   );
 }
 
+function smartParseJson(input) {
+  let text = input.trim();
+
+  if (text.startsWith('"') && text.endsWith('"')) {
+    text = JSON.parse(text);
+  }
+
+  const json = JSON.parse(text);
+
+  for (const key of Object.keys(json)) {
+    const value = json[key];
+
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+
+      if (
+        (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+        (trimmed.startsWith("[") && trimmed.endsWith("]"))
+      ) {
+        try {
+          json[key] = JSON.parse(trimmed);
+        } catch {}
+      }
+    }
+  }
+
+  return json;
+}
+
 formatButton.addEventListener("click", () => {
   try {
-    let text = inputArea.value.trim();
-    let json;
-
-    // Se o texto começar e terminar com aspas, remove
-    if (text.startsWith('"') && text.endsWith('"')) {
-      text = JSON.parse(text); // transforma a string externa em texto puro
-    }
-
-    json = JSON.parse(text); // agora sim parseia o JSON real
-
+    const json = smartParseJson(inputArea.value);
     const formattedJson = JSON.stringify(json, null, 2);
     outputArea.innerHTML = syntaxHighlight(formattedJson);
   } catch (error) {
@@ -49,18 +69,9 @@ formatButton.addEventListener("click", () => {
 
 minifyButton.addEventListener("click", () => {
   try {
-    let text = inputArea.value.trim();
-    let json;
-
-    // Se o texto começar e terminar com aspas, remove
-    if (text.startsWith('"') && text.endsWith('"')) {
-      text = JSON.parse(text); // transforma a string externa em texto puro
-    }
-
-    json = JSON.parse(text); // agora sim parseia o JSON real
-
-    const formattedJson = JSON.stringify(json, null, 2);
-    outputArea.innerHTML = syntaxHighlight(formattedJson);
+    const json = smartParseJson(inputArea.value);
+    const minifiedJson = JSON.stringify(json);
+    outputArea.textContent = minifiedJson;
   } catch (error) {
     outputArea.textContent = `Invalid JSON!\n${error.message}`;
   }
