@@ -30,31 +30,38 @@ function syntaxHighlight(json) {
 
 formatButton.addEventListener("click", () => {
   try {
-    const json = JSON.parse(inputArea.value);
+    let text = inputArea.value.trim();
+    let json;
 
-    if (typeof json === "string") {
-      json = JSON.parse(json);
+    // Se o texto começar e terminar com aspas, remove
+    if (text.startsWith('"') && text.endsWith('"')) {
+      text = JSON.parse(text); // transforma a string externa em texto puro
     }
-    
+
+    json = JSON.parse(text); // agora sim parseia o JSON real
+
     const formattedJson = JSON.stringify(json, null, 2);
     outputArea.innerHTML = syntaxHighlight(formattedJson);
   } catch (error) {
-    outputArea.textContent = `Invalid JSON! \n
-${error.message}`;
+    outputArea.textContent = `Invalid JSON!\n${error.message}`;
   }
 });
 
 minifyButton.addEventListener("click", () => {
   try {
-    const json = JSON.parse(inputArea.value);
+    let text = inputArea.value.trim();
+    let json;
 
-    if (typeof json === "string") {
-      json = JSON.parse(json);
+    // Se o texto começar e terminar com aspas, remove
+    if (text.startsWith('"') && text.endsWith('"')) {
+      text = JSON.parse(text); // transforma a string externa em texto puro
     }
-    
-    const minifiedJson = JSON.stringify(json);
-    outputArea.textContent = minifiedJson;
+
+    json = JSON.parse(text); // agora sim parseia o JSON real
+
+    const formattedJson = JSON.stringify(json, null, 2);
+    outputArea.innerHTML = syntaxHighlight(formattedJson);
   } catch (error) {
-    outputArea.textContent = "Invalid JSON";
+    outputArea.textContent = `Invalid JSON!\n${error.message}`;
   }
 });
