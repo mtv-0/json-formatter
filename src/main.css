@@ -54,7 +54,7 @@ body {
   background: #00705a;
 }
 
-/* 🎨 Cores do highlight */
+/* 🎨 Highlight JSON */
 .string {
   color: #ce9178;
 }
@@ -69,4 +69,192 @@ body {
 }
 .key {
   color: #9cdcfe;
+}
+
+/* 🌲 Árvore (pipes visuais) */
+pre {
+  margin: 0;
+  line-height: 1.4;
+  font-family: monospace;
+  color: #dcdcdc;
+}
+
+.brace-active {
+  color: #ffd700 !important;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.brace {
+  display: inline-block;
+  min-width: 14px;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+}
+.brace:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.indent-guides {
+  display: inline-block;
+  height: 100%;
+}
+
+.indent-guide {
+  display: inline-block;
+  width: 1em; /* espaço do tab */
+  border-left: 1px solid rgba(86, 156, 214, 0.25);
+  height: 1em;
+  margin-left: -1px; /* sobrepõe suavemente */
+}
+
+body {
+  background: #1e1e1e;
+  color: #dcdcdc;
+  font-family: "JetBrains Mono", monospace;
+  padding: 20px;
+}
+
+.json-container {
+  background: #1e1e1e;
+  padding: 15px;
+  border-radius: 8px;
+  position: relative;
+  line-height: 1.4em;
+  font-size: 14px;
+  overflow: auto;
+  counter-reset: line;
+}
+
+.line {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+}
+
+.indent-lines {
+  display: flex;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.indent-line {
+  width: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin-left: 16px;
+}
+
+.content {
+  white-space: pre;
+  margin-left: 8px;
+}
+
+.brace {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.brace:hover {
+  color: #9cdcfe;
+}
+
+.highlight {
+  background: rgba(100, 100, 255, 0.2);
+  border-radius: 3px;
+}
+
+.output {
+  font-family: monospace;
+  white-space: pre;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 10px;
+  overflow: auto;
+}
+
+.large-area--output {
+  position: relative;
+  font-family: monospace;
+  color: #d4d4d4;
+  padding: 10px;
+  overflow: auto;
+}
+
+.line-wrapper {
+  display: flex;
+}
+
+.line-number {
+  display: inline-block;
+  width: 40px;
+  text-align: right;
+  padding-right: 10px;
+  user-select: none;
+  color: #858585;
+}
+
+.indent-lines {
+  display: flex;
+}
+
+.brace {
+  cursor: pointer;
+}
+
+.brace-active {
+  background-color: rgba(100, 150, 255, 0.3);
+  border-radius: 2px;
+}
+
+/* Syntax highlight */
+.string {
+  color: #ce9178;
+}
+.number {
+  color: #b5cea8;
+}
+.boolean {
+  color: #569cd6;
+}
+.null {
+  color: #569cd6;
+}
+.key {
+  color: #9cdcfe;
+}
+
+.copy-button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  padding: 2px 6px;
+  font-size: 12px;
+  cursor: pointer;
+  background: #007acc;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+}
+
+.toast-message {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #333;
+  color: #fff;
+  padding: 10px 15px;
+  border-radius: 5px;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: translateY(20px);
+  z-index: 9999;
+  pointer-events: none;
+}
+.toast-message.show {
+  opacity: 1;
+  transform: translateY(0);
 }
