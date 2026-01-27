@@ -24,7 +24,9 @@ body {
   outline: none;
   resize: none;
   font-family: monospace;
-  transition: background 0.25s, color 0.25s;
+  transition:
+    background 0.25s,
+    color 0.25s;
   white-space: pre-wrap;
   overflow-y: auto;
 }
@@ -249,7 +251,9 @@ body {
   padding: 10px 15px;
   border-radius: 5px;
   opacity: 0;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
   transform: translateY(20px);
   z-index: 9999;
   pointer-events: none;
@@ -257,4 +261,28 @@ body {
 .toast-message.show {
   opacity: 1;
   transform: translateY(0);
+}
+
+.fold-toggle {
+  width: 16px;
+  cursor: pointer;
+  user-select: none;
+  color: #888;
+}
+
+.fold-toggle:hover {
+  color: #fff;
+}
+
+.dots {
+  color: #aaa;
+  font-style: italic;
+}
+
+.dots::before {
+  content: " ";
+}
+
+.dots-line .line-number {
+  visibility: hidden;
 }
