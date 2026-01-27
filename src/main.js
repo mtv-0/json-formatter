@@ -10,12 +10,14 @@ const treeButton = document.querySelector(".controls__button--tree");
 function smartParseJson(input) {
   let text = input.trim();
 
+  // Se a string estiver entre aspas, remove elas primeiro
   if (text.startsWith('"') && text.endsWith('"')) {
     text = JSON.parse(text);
   }
 
   const json = JSON.parse(text);
 
+  // Tenta converter strings internas que pareçam JSON
   for (const key of Object.keys(json)) {
     const value = json[key];
     if (typeof value === "string") {
@@ -40,19 +42,19 @@ function smartParseJson(input) {
 function formatJSONWithHighlight(obj, container) {
   container.innerHTML = "";
 
-  /* Copy button */
+  // Cria o botão de copiar rápido
   const copyButton = document.createElement("button");
   copyButton.className = "copy-button";
-  copyButton.textContent = "Copy";
+  copyButton.textContent = "Copiar";
   container.appendChild(copyButton);
 
   copyButton.addEventListener("click", () => {
     try {
       const json = smartParseJson(inputArea.value);
       navigator.clipboard.writeText(JSON.stringify(json, null, 2));
-      showToast("JSON copiado!");
+      showToast("Copiado para a área de transferência!");
     } catch {
-      showToast("JSON inválido!");
+      showToast("Erro ao processar JSON!");
     }
   });
 
@@ -62,6 +64,7 @@ function formatJSONWithHighlight(obj, container) {
   const allBraces = [];
   const lineWrappers = [];
 
+  // Cria cada linha do JSON formatado
   lines.forEach((line, idx) => {
     const indentCount = (line.match(/^(\s+)/) || [""])[0].length / 2;
     const trimmed = line.trim();
@@ -78,7 +81,7 @@ function formatJSONWithHighlight(obj, container) {
     foldToggle.className = "fold-toggle";
     foldToggle.textContent = opensBlock ? "▼" : "";
 
-    /* Line number */
+    // Número da linha lateral
     const lineNumber = document.createElement("span");
     lineNumber.className = "line-number";
     lineNumber.textContent = idx + 1;
@@ -87,6 +90,7 @@ function formatJSONWithHighlight(obj, container) {
     const lineContent = document.createElement("div");
     lineContent.className = "line";
 
+    // Linhas verticais de indentação
     const indentWrapper = document.createElement("div");
     indentWrapper.className = "indent-lines";
     for (let i = 0; i < indentCount; i++) {
@@ -98,6 +102,7 @@ function formatJSONWithHighlight(obj, container) {
     const content = document.createElement("span");
     content.className = "content";
 
+    // Realce de sintaxe manual (chaves, strings, números, etc)
     const highlighted = line.replace(
       /("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d*)?([eE][+\-]?\d+)?)/g,
       (match) => {
@@ -161,86 +166,120 @@ function formatJSONWithHighlight(obj, container) {
     const toggle = line.querySelector(".fold-toggle");
     if (!line.classList.contains("block-opener")) return;
 
-    let collapsed = false;
-    let dotsLine = null;
+    // Armazenar estado no próprio elemento
+    line.dataset.collapsed = "false";
 
     toggle.addEventListener("click", () => {
-      collapsed = !collapsed;
-      toggle.textContent = collapsed ? "▶" : "▼";
+      const isCollapsed = line.dataset.collapsed === "true";
+      const newCollapsed = !isCollapsed;
+      line.dataset.collapsed = newCollapsed.toString();
+      toggle.textContent = newCollapsed ? "▶" : "▼";
 
       const baseIndent = Number(line.dataset.indent);
       const startIndex = Number(line.dataset.index);
 
-      if (collapsed && !dotsLine) {
-        // Detectar se é array e contar elementos
-        const lineText = lines[startIndex].trim();
-        const isArray = lineText.includes("[");
-        let lengthInfo = "";
-        
-        if (isArray) {
-          // Contar quantas linhas estão sendo colapsadas no mesmo nível de indentação + 1
-          let itemCount = 0;
-          for (let i = startIndex + 1; i < lineWrappers.length; i++) {
-            const next = lineWrappers[i];
-            const nextIndent = Number(next.dataset.indent);
-            if (nextIndent <= baseIndent) break;
-            // Contar apenas elementos diretos do array (indent = baseIndent + 1)
-            if (nextIndent === baseIndent + 1) {
-              const nextLine = lines[i].trim();
-              // Verificar se não é apenas um fechamento de bloco
-              if (!nextLine.match(/^[\]}],?$/)) {
-                itemCount++;
-              }
-            }
-          }
-          lengthInfo = ` [${itemCount} ${itemCount === 1 ? 'item' : 'items'}]`;
-        }
-
-        dotsLine = document.createElement("div");
-        dotsLine.className = "line-wrapper dots-line";
-        dotsLine.innerHTML = `
-          <span class="fold-toggle"></span>
-          <span class="line-number"></span>
-          <div class="line">
-            <span class="content dots">...${lengthInfo}</span>
-          </div>
-        `;
-        line.after(dotsLine);
-      }
-
-      if (!collapsed && dotsLine) {
-        dotsLine.remove();
+      // Gerenciar linha de "..."
+      let dotsLine = line.nextElementSibling;
+      if (dotsLine && !dotsLine.classList.contains("dots-line")) {
         dotsLine = null;
       }
 
+      if (newCollapsed && !dotsLine) {
+        const lineText = lines[startIndex].trim();
+        
+        const isArray = lineText.endsWith("[");
+        
+        if (isArray) {
+            let lengthInfo = "";
+            let itemCount = 0;
+            for (let i = startIndex + 1; i < lineWrappers.length; i++) {
+              const next = lineWrappers[i];
+              const nextIndent = Number(next.dataset.indent);
+              if (nextIndent <= baseIndent) break;
+              if (nextIndent === baseIndent + 1) {
+                const nextLine = lines[i].trim();
+                // Conta itens que não sejam apenas fechamentos de bloco em strings formatadas
+                if (!nextLine.match(/^[\]}],?$/)) {
+                  itemCount++;
+                }
+              }
+            }
+            lengthInfo = ` [${itemCount} ${itemCount === 1 ? 'item' : 'itens'}]`;
+
+            dotsLine = document.createElement("div");
+            dotsLine.className = "line-wrapper dots-line";
+            dotsLine.innerHTML = `
+              <span class="fold-toggle"></span>
+              <span class="line-number"></span>
+              <div class="line">
+                <span class="content dots">...${lengthInfo}</span>
+              </div>
+            `;
+            line.after(dotsLine);
+        }
+      } else if (!newCollapsed && dotsLine) {
+        dotsLine.remove();
+      }
+
+      // Mostrar/esconder linhas filhas
       for (let i = startIndex + 1; i < lineWrappers.length; i++) {
         const next = lineWrappers[i];
         const nextIndent = Number(next.dataset.indent);
         if (nextIndent <= baseIndent) break;
-        next.style.display = collapsed ? "none" : "";
-      }
-
-      // Também esconder/mostrar as linhas de "..." dos filhos colapsados
-      const allDotsLines = container.querySelectorAll(".dots-line");
-      allDotsLines.forEach((dots) => {
-        // Verificar se esta linha de dots está dentro do bloco sendo colapsado
-        const dotsIndex = Array.from(container.children).indexOf(dots);
-        if (dotsIndex > startIndex) {
-          // Verificar se está dentro do range do bloco colapsado
-          let isInside = false;
-          for (let i = startIndex + 1; i < lineWrappers.length; i++) {
-            const nextIndent = Number(lineWrappers[i].dataset.indent);
-            if (nextIndent <= baseIndent) break;
-            if (lineWrappers[i].nextElementSibling === dots) {
-              isInside = true;
-              break;
+        
+        if (newCollapsed) {
+          next.style.display = "none";
+        } else {
+          let shouldShow = true;
+          let currentIndent = nextIndent;
+          
+          /* Verifica se existe algum pai acima na árvore que está recolhido */
+          for (let j = i - 1; j > startIndex; j--) {
+            const potentialAncestor = lineWrappers[j];
+            const ancestorIndent = Number(potentialAncestor.dataset.indent);
+            
+            if (ancestorIndent < currentIndent) {
+              currentIndent = ancestorIndent;
+              
+              if (
+                potentialAncestor.classList.contains("block-opener") && 
+                potentialAncestor.dataset.collapsed === "true"
+              ) {
+                shouldShow = false;
+                break;
+              }
             }
           }
-          if (isInside) {
-            dots.style.display = collapsed ? "none" : "";
+          
+          // Se for uma linha de reticências, decide se ela deve aparecer
+          if (next.classList.contains("dots-line")) {
+            const prevElement = next.previousElementSibling;
+            if (prevElement && prevElement.classList.contains("block-opener")) {
+              if (prevElement.dataset.collapsed === "true" && shouldShow) {
+                next.style.display = "";
+              } else {
+                next.style.display = "none";
+              }
+            }
+          } else {
+            next.style.display = shouldShow ? "" : "none";
           }
         }
-      });
+      }
+
+      /* Garante que se fecharmos um pai, as reticências dos filhos também sumam */
+      if (newCollapsed) {
+        for (let i = startIndex + 1; i < lineWrappers.length; i++) {
+          const next = lineWrappers[i];
+          const nextIndent = Number(next.dataset.indent);
+          if (nextIndent <= baseIndent) break;
+          
+          const nextDotsLine = next.nextElementSibling;
+          if (nextDotsLine && nextDotsLine.classList.contains("dots-line")) {
+            nextDotsLine.style.display = "none";
+          }
+        }
+      }
     });
   });
 }
@@ -276,25 +315,27 @@ formatButton.addEventListener("click", () => {
     const json = smartParseJson(inputArea.value);
     formatJSONWithHighlight(json, outputArea);
   } catch (e) {
-    outputArea.textContent = `Invalid JSON!\n${e.message}`;
+    outputArea.textContent = `JSON Inválido!\n${e.message}`;
   }
 });
 
+// Evento do botão "Minificar"
 minifyButton.addEventListener("click", () => {
   try {
     const json = smartParseJson(inputArea.value);
     outputArea.textContent = JSON.stringify(json);
   } catch (e) {
-    outputArea.textContent = `Invalid JSON!\n${e.message}`;
+    outputArea.textContent = `JSON Inválido!\n${e.message}`;
   }
 });
 
+// Evento do botão "Árvore"
 treeButton.addEventListener("click", () => {
   try {
     const json = smartParseJson(inputArea.value);
     outputArea.innerHTML = `<pre>${jsonToTree(json).join("\n")}</pre>`;
   } catch (e) {
-    outputArea.textContent = `Invalid JSON!\n${e.message}`;
+    outputArea.textContent = `JSON Inválido!\n${e.message}`;
   }
 });
 
@@ -307,6 +348,7 @@ function showToast(message, duration = 2000) {
   toast.textContent = message;
   document.body.appendChild(toast);
 
+  // Força um reflow para a animação funcionar
   getComputedStyle(toast).opacity;
   toast.classList.add("show");
 

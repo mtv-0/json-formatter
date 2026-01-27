@@ -1,13 +1,16 @@
 body {
   margin: 0;
+  padding: 0; 
   background: #333333;
+  overflow: hidden; 
+  height: 100vh;
 }
 
 .container {
   display: grid;
   grid-template-columns: 1fr 100px 1fr;
   align-items: center;
-  height: 100vh;
+  height: 100%;
   box-sizing: border-box;
   padding: 20px;
   gap: 20px;
@@ -105,17 +108,15 @@ pre {
 
 .indent-guide {
   display: inline-block;
-  width: 1em; /* espaço do tab */
+  width: 1em;
   border-left: 1px solid rgba(86, 156, 214, 0.25);
   height: 1em;
-  margin-left: -1px; /* sobrepõe suavemente */
+  margin-left: -1px;
 }
 
 body {
-  background: #1e1e1e;
-  color: #dcdcdc;
   font-family: "JetBrains Mono", monospace;
-  padding: 20px;
+  color: #dcdcdc;
 }
 
 .json-container {
