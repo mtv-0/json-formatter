@@ -4,18 +4,38 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="src/main.css" />
-    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
     <script defer src="src/main.js"></script>
     <title>JSON Formatter</title>
   </head>
   <body>
+    <button
+      type="button"
+      class="help-fab"
+      aria-label="Ver atalhos de teclado"
+      title="Atalhos (?)"
+    >
+      ?
+    </button>
+
     <div class="container">
-      <textarea
-        class="large-area large-area--input"
-        placeholder="Cole seu JSON aqui... (Ctrl+Enter para formatar)"
-        spellcheck="false"
-        aria-label="Entrada JSON"
-      ></textarea>
+      <div class="input-panel">
+        <label class="input-label input-label--a" hidden>JSON A</label>
+        <textarea
+          class="large-area large-area--input"
+          placeholder="Cole seu JSON aqui... (Ctrl+Enter para formatar)"
+          spellcheck="false"
+          aria-label="Entrada JSON"
+        ></textarea>
+        <label class="input-label input-label--b" hidden>JSON B</label>
+        <textarea
+          class="large-area large-area--input-b"
+          placeholder="Cole o segundo JSON para comparar..."
+          spellcheck="false"
+          aria-label="Entrada JSON B"
+          hidden
+        ></textarea>
+      </div>
 
       <div class="controls">
         <button type="button" class="controls__button controls__button--format">
@@ -26,6 +46,12 @@
         </button>
         <button type="button" class="controls__button controls__button--tree">
           Tree
+        </button>
+        <button type="button" class="controls__button controls__button--diff">
+          Diff
+        </button>
+        <button type="button" class="controls__button controls__button--history">
+          Hist
         </button>
         <button type="button" class="controls__button controls__button--clear">
           Clear
@@ -47,5 +73,77 @@
         ></pre>
       </div>
     </div>
+
+    <dialog class="modal modal--help" aria-labelledby="help-title">
+      <div class="modal__header">
+        <h2 id="help-title" class="modal__title">Atalhos</h2>
+        <button type="button" class="modal__close" aria-label="Fechar">
+          ×
+        </button>
+      </div>
+      <div class="modal__body">
+        <table class="shortcuts-table">
+          <tbody>
+            <tr>
+              <td><kbd>Ctrl</kbd> + <kbd>Enter</kbd></td>
+              <td>Formatar (ou Comparar no Diff)</td>
+            </tr>
+            <tr>
+              <td><kbd>Ctrl</kbd> + <kbd>M</kbd></td>
+              <td>Minificar</td>
+            </tr>
+            <tr>
+              <td><kbd>Ctrl</kbd> + <kbd>T</kbd></td>
+              <td>Árvore</td>
+            </tr>
+            <tr>
+              <td><kbd>Ctrl</kbd> + <kbd>D</kbd></td>
+              <td>Ligar / desligar Diff</td>
+            </tr>
+            <tr>
+              <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd></td>
+              <td>Comparar (no Diff)</td>
+            </tr>
+            <tr>
+              <td><kbd>Ctrl</kbd> + <kbd>H</kbd></td>
+              <td>Histórico</td>
+            </tr>
+            <tr>
+              <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd></td>
+              <td>Copiar saída</td>
+            </tr>
+            <tr>
+              <td><kbd>Ctrl</kbd> + <kbd>L</kbd></td>
+              <td>Limpar</td>
+            </tr>
+            <tr>
+              <td><kbd>?</kbd> ou <kbd>Ctrl</kbd> + <kbd>/</kbd></td>
+              <td>Abrir esta ajuda</td>
+            </tr>
+            <tr>
+              <td><kbd>Esc</kbd></td>
+              <td>Fechar modal</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="modal__hint">No Mac, use <kbd>⌘</kbd> no lugar de Ctrl.</p>
+      </div>
+    </dialog>
+
+    <dialog class="modal modal--history" aria-labelledby="history-title">
+      <div class="modal__header">
+        <h2 id="history-title" class="modal__title">Histórico</h2>
+        <button type="button" class="modal__close" aria-label="Fechar">
+          ×
+        </button>
+      </div>
+      <div class="modal__body">
+        <div class="history-toolbar">
+          <button type="button" class="history-clear-all">Limpar histórico</button>
+        </div>
+        <ul class="history-list"></ul>
+        <p class="history-empty" hidden>Nenhum item salvo ainda.</p>
+      </div>
+    </dialog>
   </body>
 </html>
