@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,7 +11,9 @@
     <div class="container">
       <textarea
         class="large-area large-area--input"
-        placeholder="Enter your JSON here..."
+        placeholder="Cole seu JSON aqui... (Ctrl+Enter para formatar)"
+        spellcheck="false"
+        aria-label="Entrada JSON"
       ></textarea>
 
       <div class="controls">
@@ -21,12 +23,28 @@
         <button type="button" class="controls__button controls__button--minify">
           Minify
         </button>
+        <button type="button" class="controls__button controls__button--tree">
+          Tree
+        </button>
+        <button type="button" class="controls__button controls__button--clear">
+          Clear
+        </button>
       </div>
 
-      <pre
-        class="large-area large-area--output"
-        placeholder="Formatted JSON will appear here..."
-      ></pre>
+      <div class="output-panel">
+        <button
+          type="button"
+          class="copy-button"
+          hidden
+          aria-label="Copiar JSON"
+        >
+          Copiar
+        </button>
+        <pre
+          class="large-area large-area--output"
+          aria-label="Saída JSON"
+        ></pre>
+      </div>
     </div>
   </body>
 </html>
