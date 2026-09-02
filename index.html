@@ -20,19 +20,19 @@
 
     <div class="container">
       <div class="input-panel">
-        <label class="input-label input-label--a" hidden>JSON A</label>
+        <label class="input-label input-label--a" hidden>A</label>
         <textarea
           class="large-area large-area--input"
-          placeholder="Cole seu JSON aqui... (Ctrl+Enter para formatar)"
+          placeholder="Cole JSON ou XML aqui... (Ctrl+Enter para formatar)"
           spellcheck="false"
-          aria-label="Entrada JSON"
+          aria-label="Entrada JSON ou XML"
         ></textarea>
-        <label class="input-label input-label--b" hidden>JSON B</label>
+        <label class="input-label input-label--b" hidden>B</label>
         <textarea
           class="large-area large-area--input-b"
-          placeholder="Cole o segundo JSON para comparar..."
+          placeholder="B: JSON, XML ou texto..."
           spellcheck="false"
-          aria-label="Entrada JSON B"
+          aria-label="Entrada B"
           hidden
         ></textarea>
       </div>
@@ -63,13 +63,13 @@
           type="button"
           class="copy-button"
           hidden
-          aria-label="Copiar JSON"
+          aria-label="Copiar saída"
         >
           Copiar
         </button>
         <pre
           class="large-area large-area--output"
-          aria-label="Saída JSON"
+          aria-label="Saída formatada"
         ></pre>
       </div>
     </div>
@@ -86,15 +86,15 @@
           <tbody>
             <tr>
               <td><kbd>Ctrl</kbd> + <kbd>Enter</kbd></td>
-              <td>Formatar (ou Comparar no Diff)</td>
+              <td>Formatar JSON/XML (ou Comparar no Diff)</td>
             </tr>
             <tr>
               <td><kbd>Ctrl</kbd> + <kbd>M</kbd></td>
-              <td>Minificar</td>
+              <td>Minificar JSON/XML</td>
             </tr>
             <tr>
               <td><kbd>Ctrl</kbd> + <kbd>T</kbd></td>
-              <td>Árvore</td>
+              <td>Árvore JSON/XML</td>
             </tr>
             <tr>
               <td><kbd>Ctrl</kbd> + <kbd>D</kbd></td>
@@ -126,6 +126,10 @@
             </tr>
           </tbody>
         </table>
+        <p class="modal__hint">
+          Format, Minify e Tree aceitam JSON e XML. O Diff compara JSON, XML ou
+          texto livre.
+        </p>
         <p class="modal__hint">No Mac, use <kbd>⌘</kbd> no lugar de Ctrl.</p>
       </div>
     </dialog>
