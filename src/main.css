@@ -43,15 +43,45 @@ body {
   display: block;
 }
 
-.container.is-diff .large-area--input,
-.container.is-diff .large-area--input-b {
+.editor-box {
+  display: flex;
   flex: 1;
-  height: auto;
+  min-width: 0;
   min-height: 0;
+  height: 100%;
+  background: #444444;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: background 0.25s;
 }
 
-.large-area--input-b[hidden] {
+.editor-box:hover,
+.editor-box:focus-within {
+  background: #4a4a4a;
+}
+
+.editor-box[hidden] {
   display: none !important;
+}
+
+.container.is-diff .editor-box {
+  height: auto;
+}
+
+.editor-box__gutter {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  min-width: 3.25ch;
+  padding: 20px 8px 20px 12px;
+  overflow: hidden;
+  text-align: right;
+  color: #858585;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre;
+  background: rgba(0, 0, 0, 0.18);
+  user-select: none;
+  pointer-events: none;
 }
 
 .large-area {
@@ -75,13 +105,45 @@ body {
   overflow: auto;
 }
 
+.editor-box .large-area {
+  flex: 1;
+  background: transparent;
+  border-radius: 0;
+  padding: 20px 20px 20px 12px;
+  white-space: pre;
+  overflow: auto;
+}
+
 .large-area:hover,
 .large-area:focus {
   background: #4a4a4a;
 }
 
+.editor-box .large-area:hover,
+.editor-box .large-area:focus {
+  background: transparent;
+}
+
 .large-area:focus {
   color: #eeeeee;
+}
+
+.editor-box.has-inner-lines .editor-box__gutter {
+  display: none;
+}
+
+.editor-box--output {
+  height: 100%;
+}
+
+.editor-box--output .editor-box__gutter {
+  padding: 12px 8px 12px 10px;
+}
+
+.editor-box--output .large-area--output {
+  flex: 1;
+  min-height: 0;
+  padding-left: 12px;
 }
 
 .controls {
@@ -749,7 +811,6 @@ kbd {
   }
 
   .input-panel,
-  .large-area,
   .output-panel {
     min-height: 40vh;
     height: 40vh;
