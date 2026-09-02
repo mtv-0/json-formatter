@@ -1,9 +1,11 @@
 const container = document.querySelector(".container");
 const inputArea = document.querySelector(".large-area--input");
 const inputAreaB = document.querySelector(".large-area--input-b");
+const inputBoxB = document.querySelector(".editor-box--b");
 const inputLabelA = document.querySelector(".input-label--a");
 const inputLabelB = document.querySelector(".input-label--b");
 const outputArea = document.querySelector(".large-area--output");
+const outputBox = document.querySelector(".editor-box--output");
 const formatButton = document.querySelector(".controls__button--format");
 const minifyButton = document.querySelector(".controls__button--minify");
 const treeButton = document.querySelector(".controls__button--tree");
@@ -27,6 +29,59 @@ let diffMode = false;
 
 const HISTORY_KEY = "json-formatter-history";
 const HISTORY_MAX = 25;
+
+function countTextLines(text) {
+  let count = 1;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === "\n") count++;
+  }
+  return count;
+}
+
+function updateEditorLines(textarea) {
+  const box = textarea.closest(".editor-box");
+  if (!box) return;
+  const gutter = box.querySelector(".editor-box__gutter");
+  if (!gutter) return;
+
+  const count = countTextLines(textarea.value);
+  if (Number(gutter.dataset.count || 0) !== count) {
+    gutter.dataset.count = String(count);
+    let lines = "1";
+    for (let i = 2; i <= count; i++) lines += `\n${i}`;
+    gutter.textContent = lines;
+    gutter.style.minWidth = `${Math.max(2, String(count).length) + 1.25}ch`;
+  }
+  gutter.scrollTop = textarea.scrollTop;
+}
+
+function bindEditorLines(textarea) {
+  const sync = () => updateEditorLines(textarea);
+  textarea.addEventListener("input", sync);
+  textarea.addEventListener("scroll", () => {
+    const gutter = textarea.closest(".editor-box")?.querySelector(".editor-box__gutter");
+    if (gutter) gutter.scrollTop = textarea.scrollTop;
+  });
+  sync();
+}
+
+function setOutputGutterMode(innerLines, text = "") {
+  if (!outputBox) return;
+  outputBox.classList.toggle("has-inner-lines", innerLines);
+  if (innerLines) return;
+
+  const gutter = outputBox.querySelector(".editor-box__gutter");
+  if (!gutter) return;
+  const count = countTextLines(text);
+  if (Number(gutter.dataset.count || 0) !== count) {
+    gutter.dataset.count = String(count);
+    let lines = "1";
+    for (let i = 2; i <= count; i++) lines += `\n${i}`;
+    gutter.textContent = lines;
+    gutter.style.minWidth = `${Math.max(2, String(count).length) + 1.25}ch`;
+  }
+  gutter.scrollTop = outputArea.scrollTop;
+}
 
 const TOKEN_RE =
   /("(?:\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(?:\s*:)?|\b(?:true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g;
@@ -85,22 +140,85 @@ function smartParseJson(input) {
   return json;
 }
 
+const XML_FRAGMENT_ROOT = "jf-fragment";
+
+function xmlParserError(doc) {
+  const err =
+    doc.querySelector("parsererror") ||
+    doc.getElementsByTagName("parsererror")[0] ||
+    doc.getElementsByTagNameNS("*", "parsererror")[0];
+  if (!err && doc.documentElement?.nodeName !== "parsererror") return null;
+  const node = err || doc.documentElement;
+  const raw = node.textContent.replace(/\s+/g, " ").trim();
+  const short = raw.replace(/^This page contains the following errors:\s*/i, "");
+  return short.slice(0, 280) || "XML inválido";
+}
+
+function parseXmlDocument(text) {
+  return new DOMParser().parseFromString(text, "application/xml");
+}
+
+function closeUnclosedXmlTags(text) {
+  let source = text;
+  const lastLt = source.lastIndexOf("<");
+  const lastGt = source.lastIndexOf(">");
+  if (lastLt > lastGt) {
+    source = source.slice(0, lastLt).replace(/\s+$/, "");
+  }
+
+  const stack = [];
+  const re =
+    /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|<\/([\w:.-]+)[^>]*>|<([\w:.-]+)([^>]*)>/g;
+  let match;
+  while ((match = re.exec(source))) {
+    const [, closingName, openingName, attrs = ""] = match;
+    if (!closingName && !openingName) continue;
+    if (closingName) {
+      const name = closingName;
+      for (let i = stack.length - 1; i >= 0; i--) {
+        if (stack[i].toLowerCase() === name.toLowerCase()) {
+          stack.length = i;
+          break;
+        }
+      }
+      continue;
+    }
+    if (/\/\s*$/.test(attrs)) continue;
+    stack.push(openingName);
+  }
+
+  if (!stack.length) return source;
+  return `${source}${stack.reverse().map((name) => `</${name}>`).join("")}`;
+}
+
 function parseXml(input) {
   const text = stripBom(input).trim();
   if (!text) throw new SyntaxError("Entrada vazia");
 
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(text, "application/xml");
-  const err = doc.querySelector("parsererror");
-  if (err) {
-    const raw = err.textContent.replace(/\s+/g, " ").trim();
-    const short = raw.replace(/^This page contains the following errors:\s*/i, "");
-    throw new SyntaxError(short.slice(0, 280) || "XML inválido");
+  const attempts = [
+    { source: text, fragment: false },
+    { source: `<${XML_FRAGMENT_ROOT}>${text}</${XML_FRAGMENT_ROOT}>`, fragment: true },
+    { source: closeUnclosedXmlTags(text), fragment: false },
+    {
+      source: `<${XML_FRAGMENT_ROOT}>${closeUnclosedXmlTags(text)}</${XML_FRAGMENT_ROOT}>`,
+      fragment: true,
+    },
+  ];
+
+  let firstError = "";
+  for (const attempt of attempts) {
+    const doc = parseXmlDocument(attempt.source);
+    const error = xmlParserError(doc);
+    if (error) {
+      if (!firstError) firstError = error;
+      continue;
+    }
+    if (!doc.documentElement) continue;
+    if (attempt.fragment) doc.__fragment = true;
+    return doc;
   }
-  if (!doc.documentElement) {
-    throw new SyntaxError("XML inválido");
-  }
-  return doc;
+
+  throw new SyntaxError(firstError || "XML inválido");
 }
 
 function xmlElementToValue(el) {
@@ -146,6 +264,9 @@ function xmlElementToValue(el) {
 
 function xmlToObject(doc) {
   const root = doc.documentElement;
+  if (doc.__fragment) {
+    return xmlElementToValue(root);
+  }
   return { [root.nodeName]: xmlElementToValue(root) };
 }
 
@@ -245,7 +366,11 @@ function serializeXml(doc, { pretty = true, originalText = "" } = {}) {
     if (pretty) parts.push("\n");
   }
 
-  for (const child of doc.childNodes) {
+  const nodes = doc.__fragment
+    ? doc.documentElement.childNodes
+    : doc.childNodes;
+
+  for (const child of nodes) {
     if (
       child.nodeType === Node.PROCESSING_INSTRUCTION_NODE &&
       child.target.toLowerCase() === "xml"
@@ -421,6 +546,7 @@ function renderHighlightedLines(text, container, { highlight, opensBlock }) {
   resetOutputMode();
   container.replaceChildren();
   showCopyButton();
+  setOutputGutterMode(true);
 
   const lines = text.split("\n");
   const fragment = document.createDocumentFragment();
@@ -1148,6 +1274,7 @@ function buildStringInlineDiff(a, b) {
 function renderDiff(changes, { kind = "json" } = {}) {
   resetOutputMode("is-diff");
   outputArea.replaceChildren();
+  setOutputGutterMode(true);
 
   const fragment = document.createDocumentFragment();
   const summary = document.createElement("div");
@@ -1255,7 +1382,7 @@ function setDiffMode(enabled) {
   diffMode = enabled;
   container.classList.toggle("is-diff", enabled);
   diffButton.classList.toggle("is-active", enabled);
-  inputAreaB.hidden = !enabled;
+  inputBoxB.hidden = !enabled;
   inputLabelA.hidden = !enabled;
   inputLabelB.hidden = !enabled;
 
@@ -1272,6 +1399,7 @@ function setDiffMode(enabled) {
   inputAreaB.placeholder = "B: JSON, XML ou texto...";
 
   if (enabled) {
+    updateEditorLines(inputAreaB);
     inputAreaB.focus();
   }
 }
@@ -1393,6 +1521,8 @@ function restoreHistoryItem(raw) {
   setDiffMode(mode === "diff");
   inputArea.value = item.text;
   inputAreaB.value = mode === "diff" ? item.textB : "";
+  updateEditorLines(inputArea);
+  updateEditorLines(inputAreaB);
 
   try {
     if (mode === "diff") {
@@ -1488,6 +1618,7 @@ function showError(message) {
   resetOutputMode("is-error");
   outputArea.replaceChildren();
   outputArea.textContent = message;
+  setOutputGutterMode(false, message);
 }
 
 function renderMinified(json) {
@@ -1496,6 +1627,7 @@ function renderMinified(json) {
   resetOutputMode("is-minified");
   outputArea.replaceChildren();
   outputArea.textContent = text;
+  setOutputGutterMode(false, text);
   showCopyButton();
 }
 
@@ -1505,6 +1637,7 @@ function renderMinifiedXml(doc, originalText) {
   resetOutputMode("is-minified");
   outputArea.replaceChildren();
   outputArea.textContent = text;
+  setOutputGutterMode(false, text);
   showCopyButton();
 }
 
@@ -1513,6 +1646,7 @@ function renderTree(json) {
   resetOutputMode("is-tree");
   outputArea.replaceChildren();
   appendTreeNodes(outputArea, json);
+  setOutputGutterMode(true);
   showCopyButton();
 }
 
@@ -1541,8 +1675,11 @@ async function copyOutput() {
 function clearAll() {
   inputArea.value = "";
   inputAreaB.value = "";
+  updateEditorLines(inputArea);
+  updateEditorLines(inputAreaB);
   resetOutputMode();
   outputArea.replaceChildren();
+  setOutputGutterMode(false, "");
   hideCopyButton();
   inputArea.focus();
 }
@@ -1690,6 +1827,14 @@ historyButton.addEventListener("click", openHistory);
 clearButton.addEventListener("click", clearAll);
 copyButton.addEventListener("click", copyOutput);
 helpFab.addEventListener("click", openHelp);
+bindEditorLines(inputArea);
+bindEditorLines(inputAreaB);
+setOutputGutterMode(false, "");
+outputArea.addEventListener("scroll", () => {
+  if (!outputBox || outputBox.classList.contains("has-inner-lines")) return;
+  const gutter = outputBox.querySelector(".editor-box__gutter");
+  if (gutter) gutter.scrollTop = outputArea.scrollTop;
+});
 
 helpModal.querySelector(".modal__close").addEventListener("click", () => {
   helpModal.close();
