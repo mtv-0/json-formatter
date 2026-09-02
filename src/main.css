@@ -397,6 +397,16 @@ body {
 .key {
   color: #9cdcfe;
 }
+.xml-tag {
+  color: #569cd6;
+}
+.xml-punct {
+  color: #808080;
+}
+.xml-comment {
+  color: #6a9955;
+  font-style: italic;
+}
 
 .brace {
   display: inline-block;
