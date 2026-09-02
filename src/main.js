@@ -158,6 +158,76 @@ function parseXmlDocument(text) {
   return new DOMParser().parseFromString(text, "application/xml");
 }
 
+const XML_SYNTHETIC_NS = "urn:jf-ns:";
+
+function stripTrailingXmlJunk(text) {
+  return text.replace(/>[\s,;]+$/g, ">");
+}
+
+function isReservedXmlPrefix(prefix) {
+  const lower = prefix.toLowerCase();
+  return lower === "xml" || lower === "xmlns";
+}
+
+function findUnboundXmlPrefixes(text) {
+  const declared = new Set();
+  const declRe = /\sxmlns:([A-Za-z_][\w.-]*)\s*=/gi;
+  let match;
+  while ((match = declRe.exec(text))) {
+    declared.add(match[1]);
+  }
+
+  const used = new Set();
+  const tagRe = /<\/?([A-Za-z_][\w.-]*):/g;
+  while ((match = tagRe.exec(text))) {
+    if (!isReservedXmlPrefix(match[1])) used.add(match[1]);
+  }
+
+  const attrRe = /(?:^|[\s"'<])([A-Za-z_][\w.-]*):[A-Za-z_][\w.-]*\s*=/g;
+  while ((match = attrRe.exec(text))) {
+    if (!isReservedXmlPrefix(match[1])) used.add(match[1]);
+  }
+
+  return [...used].filter((prefix) => !declared.has(prefix));
+}
+
+function wrapWithXmlNamespaces(inner) {
+  const prefixes = findUnboundXmlPrefixes(inner);
+  if (!prefixes.length) return null;
+  const attrs = prefixes
+    .map((prefix) => `xmlns:${prefix}="${XML_SYNTHETIC_NS}${prefix}"`)
+    .join(" ");
+  return `<${XML_FRAGMENT_ROOT} ${attrs}>${inner}</${XML_FRAGMENT_ROOT}>`;
+}
+
+function isSyntheticXmlns(attr) {
+  return (
+    (attr.name.startsWith("xmlns:") || attr.name === "xmlns") &&
+    String(attr.value).startsWith(XML_SYNTHETIC_NS)
+  );
+}
+
+function xmlAttemptSources(text) {
+  const variants = [text];
+  const repaired = closeUnclosedXmlTags(text);
+  if (repaired !== text) variants.push(repaired);
+
+  const attempts = [];
+  const seen = new Set();
+  const push = (source, fragment) => {
+    if (!source || seen.has(source)) return;
+    seen.add(source);
+    attempts.push({ source, fragment });
+  };
+
+  for (const variant of variants) {
+    push(variant, false);
+    push(`<${XML_FRAGMENT_ROOT}>${variant}</${XML_FRAGMENT_ROOT}>`, true);
+    push(wrapWithXmlNamespaces(variant), true);
+  }
+  return attempts;
+}
+
 function closeUnclosedXmlTags(text) {
   let source = text;
   const lastLt = source.lastIndexOf("<");
@@ -192,21 +262,11 @@ function closeUnclosedXmlTags(text) {
 }
 
 function parseXml(input) {
-  const text = stripBom(input).trim();
+  const text = stripTrailingXmlJunk(stripBom(input).trim());
   if (!text) throw new SyntaxError("Entrada vazia");
 
-  const attempts = [
-    { source: text, fragment: false },
-    { source: `<${XML_FRAGMENT_ROOT}>${text}</${XML_FRAGMENT_ROOT}>`, fragment: true },
-    { source: closeUnclosedXmlTags(text), fragment: false },
-    {
-      source: `<${XML_FRAGMENT_ROOT}>${closeUnclosedXmlTags(text)}</${XML_FRAGMENT_ROOT}>`,
-      fragment: true,
-    },
-  ];
-
   let firstError = "";
-  for (const attempt of attempts) {
+  for (const attempt of xmlAttemptSources(text)) {
     const doc = parseXmlDocument(attempt.source);
     const error = xmlParserError(doc);
     if (error) {
@@ -224,6 +284,7 @@ function parseXml(input) {
 function xmlElementToValue(el) {
   const obj = {};
   for (const attr of el.attributes) {
+    if (isSyntheticXmlns(attr)) continue;
     obj[`@${attr.name}`] = attr.value;
   }
 
@@ -317,6 +378,7 @@ function serializeXmlNode(node, parts, indent) {
   if (node.nodeType !== Node.ELEMENT_NODE) return;
 
   const attrs = [...node.attributes]
+    .filter((a) => !isSyntheticXmlns(a))
     .map((a) => `${a.name}="${escapeXmlAttr(a.value)}"`)
     .join(" ");
   const attrStr = attrs ? ` ${attrs}` : "";
