@@ -45,10 +45,35 @@ function isMod(e) {
 }
 
 /* =========================
-   Parse inteligente
+   Parse inteligente (JSON / XML)
 ========================= */
+function stripBom(input) {
+  return String(input || "").replace(/^\uFEFF/, "");
+}
+
+function looksLikeJson(text) {
+  const t = text.trim();
+  if (!t) return false;
+  const c = t[0];
+  if (c === "{" || c === "[" || c === '"') return true;
+  if (c === "t" || c === "f" || c === "n" || c === "-" || (c >= "0" && c <= "9")) {
+    try {
+      JSON.parse(t);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
+function looksLikeXml(text) {
+  const t = text.trim();
+  return t.startsWith("<");
+}
+
 function smartParseJson(input) {
-  let text = input.trim();
+  let text = stripBom(input).trim();
   if (!text) throw new SyntaxError("Entrada vazia");
 
   if (text.startsWith('"') && text.endsWith('"')) {
@@ -58,6 +83,208 @@ function smartParseJson(input) {
   const json = JSON.parse(text);
   deepParseNestedJson(json);
   return json;
+}
+
+function parseXml(input) {
+  const text = stripBom(input).trim();
+  if (!text) throw new SyntaxError("Entrada vazia");
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(text, "application/xml");
+  const err = doc.querySelector("parsererror");
+  if (err) {
+    const raw = err.textContent.replace(/\s+/g, " ").trim();
+    const short = raw.replace(/^This page contains the following errors:\s*/i, "");
+    throw new SyntaxError(short.slice(0, 280) || "XML inválido");
+  }
+  if (!doc.documentElement) {
+    throw new SyntaxError("XML inválido");
+  }
+  return doc;
+}
+
+function xmlElementToValue(el) {
+  const obj = {};
+  for (const attr of el.attributes) {
+    obj[`@${attr.name}`] = attr.value;
+  }
+
+  const elements = [];
+  let text = "";
+  for (const child of el.childNodes) {
+    if (child.nodeType === Node.ELEMENT_NODE) {
+      elements.push(child);
+    } else if (
+      child.nodeType === Node.TEXT_NODE ||
+      child.nodeType === Node.CDATA_SECTION_NODE
+    ) {
+      text += child.textContent;
+    }
+  }
+
+  const trimmed = text.trim();
+  if (elements.length === 0) {
+    if (Object.keys(obj).length === 0) return trimmed;
+    if (trimmed) obj["#text"] = trimmed;
+    return obj;
+  }
+
+  for (const child of elements) {
+    const name = child.nodeName;
+    const value = xmlElementToValue(child);
+    if (!Object.prototype.hasOwnProperty.call(obj, name)) {
+      obj[name] = value;
+    } else if (Array.isArray(obj[name])) {
+      obj[name].push(value);
+    } else {
+      obj[name] = [obj[name], value];
+    }
+  }
+  if (trimmed) obj["#text"] = trimmed;
+  return obj;
+}
+
+function xmlToObject(doc) {
+  const root = doc.documentElement;
+  return { [root.nodeName]: xmlElementToValue(root) };
+}
+
+function escapeXmlText(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function escapeXmlAttr(str) {
+  return escapeXmlText(str).replace(/"/g, "&quot;");
+}
+
+function serializeXmlNode(node, parts, indent) {
+  const pretty = indent !== null;
+  const pad = pretty ? "  ".repeat(indent) : "";
+  const nl = pretty ? "\n" : "";
+
+  if (node.nodeType === Node.DOCUMENT_TYPE_NODE) {
+    parts.push(`<!DOCTYPE ${node.name}>${nl}`);
+    return;
+  }
+
+  if (node.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
+    const data = node.data ? ` ${node.data}` : "";
+    parts.push(`<?${node.target}${data}?>${nl}`);
+    return;
+  }
+
+  if (node.nodeType === Node.COMMENT_NODE) {
+    parts.push(`${pad}<!--${node.data}-->${nl}`);
+    return;
+  }
+
+  if (node.nodeType === Node.CDATA_SECTION_NODE) {
+    parts.push(`${pad}<![CDATA[${node.data}]]>${nl}`);
+    return;
+  }
+
+  if (node.nodeType === Node.TEXT_NODE) {
+    const t = pretty ? node.textContent.trim() : node.textContent;
+    if (!t || (pretty && !t.trim())) return;
+    parts.push(pretty ? `${pad}${escapeXmlText(t)}${nl}` : escapeXmlText(t));
+    return;
+  }
+
+  if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+  const attrs = [...node.attributes]
+    .map((a) => `${a.name}="${escapeXmlAttr(a.value)}"`)
+    .join(" ");
+  const attrStr = attrs ? ` ${attrs}` : "";
+  const children = [...node.childNodes].filter((child) => {
+    if (child.nodeType === Node.TEXT_NODE) {
+      return child.textContent.trim().length > 0;
+    }
+    return (
+      child.nodeType === Node.ELEMENT_NODE ||
+      child.nodeType === Node.COMMENT_NODE ||
+      child.nodeType === Node.CDATA_SECTION_NODE ||
+      child.nodeType === Node.PROCESSING_INSTRUCTION_NODE
+    );
+  });
+
+  if (children.length === 0) {
+    parts.push(`${pad}<${node.nodeName}${attrStr}/>${nl}`);
+    return;
+  }
+
+  const onlyText =
+    children.length === 1 &&
+    (children[0].nodeType === Node.TEXT_NODE ||
+      children[0].nodeType === Node.CDATA_SECTION_NODE);
+
+  if (onlyText && children[0].nodeType === Node.TEXT_NODE) {
+    const t = pretty ? children[0].textContent.trim() : children[0].textContent;
+    parts.push(
+      `${pad}<${node.nodeName}${attrStr}>${escapeXmlText(t)}</${node.nodeName}>${nl}`,
+    );
+    return;
+  }
+
+  parts.push(`${pad}<${node.nodeName}${attrStr}>${nl}`);
+  for (const child of children) {
+    serializeXmlNode(child, parts, pretty ? indent + 1 : null);
+  }
+  parts.push(`${pad}</${node.nodeName}>${nl}`);
+}
+
+function serializeXml(doc, { pretty = true, originalText = "" } = {}) {
+  const parts = [];
+  const source = stripBom(originalText);
+  if (/^\s*<\?xml\b/i.test(source)) {
+    const decl = source.match(/^\s*<\?xml\b[^?]*\?>/i);
+    parts.push(decl ? decl[0].trim() : '<?xml version="1.0" encoding="UTF-8"?>');
+    if (pretty) parts.push("\n");
+  }
+
+  for (const child of doc.childNodes) {
+    if (
+      child.nodeType === Node.PROCESSING_INSTRUCTION_NODE &&
+      child.target.toLowerCase() === "xml"
+    ) {
+      continue;
+    }
+    serializeXmlNode(child, parts, pretty ? 0 : null);
+  }
+
+  return parts.join("").replace(/\s+$/, "");
+}
+
+function parseStructured(input) {
+  const text = stripBom(input).trim();
+  if (!text) throw new SyntaxError("Entrada vazia");
+
+  if (looksLikeJson(text)) {
+    return { kind: "json", value: smartParseJson(input) };
+  }
+
+  if (looksLikeXml(text)) {
+    const doc = parseXml(input);
+    return {
+      kind: "xml",
+      value: xmlToObject(doc),
+      doc,
+      raw: input,
+    };
+  }
+
+  return { kind: "json", value: smartParseJson(input) };
+}
+
+function tryParseStructured(input) {
+  try {
+    return parseStructured(input);
+  } catch {
+    return { kind: "text", value: stripBom(input) };
+  }
 }
 
 function deepParseNestedJson(value) {
@@ -130,6 +357,40 @@ function highlightLine(line) {
     .replace(/[{}[\]]/g, (m) => `<span class="brace">${m}</span>`);
 }
 
+function highlightXmlLine(line) {
+  const trimmed = line.trim();
+  if (
+    trimmed.startsWith("<!--") ||
+    trimmed.startsWith("<?") ||
+    trimmed.startsWith("<!DOCTYPE") ||
+    trimmed.startsWith("<![CDATA[")
+  ) {
+    return `<span class="xml-comment">${escapeHtml(line)}</span>`;
+  }
+
+  return escapeHtml(line).replace(
+    /(&lt;\/?)([\w:.-]+)([^&]*?)(\/?&gt;)/g,
+    (_, open, name, rest, close) => {
+      const attrs = rest.replace(
+        /([\w:.-]+)(=)(&quot;[\s\S]*?&quot;)/g,
+        '<span class="key">$1</span>$2<span class="string">$3</span>',
+      );
+      return `<span class="xml-punct">${open}</span><span class="xml-tag">${name}</span>${attrs}<span class="xml-punct">${close}</span>`;
+    },
+  );
+}
+
+function isXmlBlockOpener(trimmed) {
+  if (!trimmed.startsWith("<") || trimmed.startsWith("</") || trimmed.startsWith("<!")) {
+    return false;
+  }
+  if (trimmed.startsWith("<?") || trimmed.endsWith("/>") || !trimmed.endsWith(">")) {
+    return false;
+  }
+  if (/^<[^>]+>[\s\S]*<\/[^>]+>$/.test(trimmed)) return false;
+  return true;
+}
+
 function compactPreview(text, max = 80) {
   const oneLine = text.replace(/\s+/g, " ").trim();
   return oneLine.length > max ? `${oneLine.slice(0, max)}…` : oneLine;
@@ -139,14 +400,29 @@ function compactPreview(text, max = 80) {
    Formatação com highlight + collapse
 ========================= */
 function formatJSONWithHighlight(obj, container) {
-  resetOutputMode();
-  container.replaceChildren();
-
   const jsonText = JSON.stringify(obj, null, 2);
   lastCopyText = jsonText;
+  renderHighlightedLines(jsonText, container, {
+    highlight: highlightLine,
+    opensBlock: (trimmed) => /[{[]\s*$/.test(trimmed),
+  });
+}
+
+function formatXmlWithHighlight(doc, originalText, container) {
+  const xmlText = serializeXml(doc, { pretty: true, originalText });
+  lastCopyText = xmlText;
+  renderHighlightedLines(xmlText, container, {
+    highlight: highlightXmlLine,
+    opensBlock: isXmlBlockOpener,
+  });
+}
+
+function renderHighlightedLines(text, container, { highlight, opensBlock }) {
+  resetOutputMode();
+  container.replaceChildren();
   showCopyButton();
 
-  const lines = jsonText.split("\n");
+  const lines = text.split("\n");
   const fragment = document.createDocumentFragment();
   const allBraces = [];
   const lineWrappers = [];
@@ -155,20 +431,20 @@ function formatJSONWithHighlight(obj, container) {
     const line = lines[idx];
     const indentCount = (line.match(/^(\s*)/) || [""])[0].length / 2;
     const trimmed = line.trim();
-    const opensBlock = /[{[]\s*$/.test(trimmed);
+    const opens = opensBlock(trimmed);
 
     const wrapper = document.createElement("div");
     wrapper.className = "line-wrapper";
     wrapper.dataset.indent = String(indentCount);
     wrapper.dataset.index = String(idx);
-    if (opensBlock) {
+    if (opens) {
       wrapper.classList.add("block-opener");
       wrapper.dataset.collapsed = "false";
     }
 
     const foldToggle = document.createElement("span");
     foldToggle.className = "fold-toggle";
-    foldToggle.textContent = opensBlock ? "▼" : "";
+    foldToggle.textContent = opens ? "▼" : "";
     foldToggle.setAttribute("aria-hidden", "true");
 
     const lineNumber = document.createElement("span");
@@ -188,7 +464,7 @@ function formatJSONWithHighlight(obj, container) {
 
     const content = document.createElement("span");
     content.className = "content";
-    content.innerHTML = highlightLine(line);
+    content.innerHTML = highlight(line);
 
     lineContent.appendChild(indentWrapper);
     lineContent.appendChild(content);
@@ -584,6 +860,140 @@ function collectDiff(a, b, path = "", out = []) {
   return out;
 }
 
+function diffLineOps(a, b) {
+  const n = a.length;
+  const m = b.length;
+  const dp = Array.from({ length: n + 1 }, () => new Uint32Array(m + 1));
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      dp[i][j] =
+        a[i - 1] === b[j - 1]
+          ? dp[i - 1][j - 1] + 1
+          : dp[i - 1][j] > dp[i][j - 1]
+            ? dp[i - 1][j]
+            : dp[i][j - 1];
+    }
+  }
+
+  const ops = [];
+  let i = n;
+  let j = m;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && a[i - 1] === b[j - 1]) {
+      ops.push({ type: "equal", a: a[i - 1], lineA: i, lineB: j });
+      i--;
+      j--;
+    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+      ops.push({ type: "added", b: b[j - 1], lineB: j });
+      j--;
+    } else {
+      ops.push({ type: "removed", a: a[i - 1], lineA: i });
+      i--;
+    }
+  }
+  ops.reverse();
+  return ops;
+}
+
+function collectTextDiff(textA, textB) {
+  if (textA === textB) return [];
+
+  const linesA = String(textA).split(/\r?\n/);
+  const linesB = String(textB).split(/\r?\n/);
+
+  let start = 0;
+  while (
+    start < linesA.length &&
+    start < linesB.length &&
+    linesA[start] === linesB[start]
+  ) {
+    start++;
+  }
+
+  let endA = linesA.length - 1;
+  let endB = linesB.length - 1;
+  while (endA >= start && endB >= start && linesA[endA] === linesB[endB]) {
+    endA--;
+    endB--;
+  }
+
+  const midA = linesA.slice(start, endA + 1);
+  const midB = linesB.slice(start, endB + 1);
+  let ops;
+
+  if (midA.length * midB.length > 400000) {
+    ops = [];
+    const pairs = Math.min(midA.length, midB.length);
+    for (let i = 0; i < pairs; i++) {
+      if (midA[i] === midB[i]) {
+        ops.push({
+          type: "equal",
+          a: midA[i],
+          lineA: start + i + 1,
+          lineB: start + i + 1,
+        });
+      } else {
+        ops.push({ type: "removed", a: midA[i], lineA: start + i + 1 });
+        ops.push({ type: "added", b: midB[i], lineB: start + i + 1 });
+      }
+    }
+    for (let i = pairs; i < midA.length; i++) {
+      ops.push({ type: "removed", a: midA[i], lineA: start + i + 1 });
+    }
+    for (let i = pairs; i < midB.length; i++) {
+      ops.push({ type: "added", b: midB[i], lineB: start + i + 1 });
+    }
+  } else {
+    ops = diffLineOps(midA, midB).map((op) => {
+      const next = { ...op };
+      if (next.lineA != null) next.lineA += start;
+      if (next.lineB != null) next.lineB += start;
+      return next;
+    });
+  }
+
+  const changes = [];
+  let hunk = [];
+
+  const flushHunk = () => {
+    if (!hunk.length) return;
+    const removed = hunk.filter((o) => o.type === "removed");
+    const added = hunk.filter((o) => o.type === "added");
+    const pairs = Math.min(removed.length, added.length);
+    for (let i = 0; i < pairs; i++) {
+      changes.push(
+        buildChange(
+          "changed",
+          `linha ${removed[i].lineA} → ${added[i].lineB}`,
+          removed[i].a,
+          added[i].b,
+        ),
+      );
+    }
+    for (let i = pairs; i < removed.length; i++) {
+      changes.push(
+        buildChange("removed", `linha ${removed[i].lineA}`, removed[i].a, undefined),
+      );
+    }
+    for (let i = pairs; i < added.length; i++) {
+      changes.push(
+        buildChange("added", `linha ${added[i].lineB}`, undefined, added[i].b),
+      );
+    }
+    hunk = [];
+  };
+
+  for (const op of ops) {
+    if (op.type === "equal") {
+      flushHunk();
+    } else {
+      hunk.push(op);
+    }
+  }
+  flushHunk();
+  return changes;
+}
+
 function buildChange(type, path, oldValue, newValue) {
   const change = {
     type,
@@ -735,7 +1145,7 @@ function buildStringInlineDiff(a, b) {
   );
 }
 
-function renderDiff(changes) {
+function renderDiff(changes, { kind = "json" } = {}) {
   resetOutputMode("is-diff");
   outputArea.replaceChildren();
 
@@ -743,12 +1153,18 @@ function renderDiff(changes) {
   const summary = document.createElement("div");
   summary.className = "diff-summary";
 
+  const equivalentLabel = {
+    json: "JSON A e JSON B são equivalentes.",
+    xml: "XML A e XML B são equivalentes.",
+    text: "Textos A e B são equivalentes.",
+  };
+
   if (changes.length === 0) {
     summary.textContent = "Nenhuma diferença encontrada.";
     fragment.appendChild(summary);
     const empty = document.createElement("div");
     empty.className = "diff-empty";
-    empty.textContent = "JSON A e JSON B são equivalentes.";
+    empty.textContent = equivalentLabel[kind] || equivalentLabel.text;
     fragment.appendChild(empty);
     lastCopyText = "Nenhuma diferença encontrada.";
     outputArea.appendChild(fragment);
@@ -759,7 +1175,8 @@ function renderDiff(changes) {
   const added = changes.filter((c) => c.type === "added").length;
   const removed = changes.filter((c) => c.type === "removed").length;
   const changed = changes.filter((c) => c.type === "changed").length;
-  summary.textContent = `${changes.length} diferença(s): +${added}  −${removed}  ~${changed}`;
+  const kindHint = kind === "text" ? " (texto)" : kind === "xml" ? " (XML)" : "";
+  summary.textContent = `${changes.length} diferença(s)${kindHint}: +${added}  −${removed}  ~${changed}`;
   fragment.appendChild(summary);
 
   const plainLines = [summary.textContent, ""];
@@ -846,11 +1263,13 @@ function setDiffMode(enabled) {
 
   inputArea.setAttribute(
     "aria-label",
-    enabled ? "Entrada JSON A" : "Entrada JSON",
+    enabled ? "Entrada A" : "Entrada JSON ou XML",
   );
   inputArea.placeholder = enabled
-    ? "JSON A..."
-    : "Cole seu JSON aqui... (Ctrl+Enter para formatar)";
+    ? "A: JSON, XML ou texto..."
+    : "Cole JSON ou XML aqui... (Ctrl+Enter para formatar)";
+  inputAreaB.setAttribute("aria-label", "Entrada B");
+  inputAreaB.placeholder = "B: JSON, XML ou texto...";
 
   if (enabled) {
     inputAreaB.focus();
@@ -978,21 +1397,19 @@ function restoreHistoryItem(raw) {
   try {
     if (mode === "diff") {
       if (!item.textB.trim()) {
-        showToast("Diff restaurado — complete o JSON B", false, 2500);
+        showToast("Diff restaurado — complete o lado B", false, 2500);
       } else {
-        const a = smartParseJson(item.text);
-        const b = smartParseJson(item.textB);
-        renderDiff(collectDiff(a, b));
+        applyDiff(item.text, item.textB);
         showToast("Diff restaurado");
       }
     } else if (mode === "minify") {
-      renderMinified(smartParseJson(item.text));
+      applyMinify(item.text);
       showToast("Minify restaurado");
     } else if (mode === "tree") {
-      renderTree(smartParseJson(item.text));
+      applyTree(item.text);
       showToast("Tree restaurado");
     } else {
-      formatJSONWithHighlight(smartParseJson(item.text), outputArea);
+      applyFormat(item.text);
       showToast("Format restaurado");
     }
   } catch (e) {
@@ -1082,6 +1499,15 @@ function renderMinified(json) {
   showCopyButton();
 }
 
+function renderMinifiedXml(doc, originalText) {
+  const text = serializeXml(doc, { pretty: false, originalText });
+  lastCopyText = text;
+  resetOutputMode("is-minified");
+  outputArea.replaceChildren();
+  outputArea.textContent = text;
+  showCopyButton();
+}
+
 function renderTree(json) {
   lastCopyText = treeToPlainText(json);
   resetOutputMode("is-tree");
@@ -1143,6 +1569,46 @@ function showToast(message, isError = false, duration = 2000) {
   }, duration);
 }
 
+function applyFormat(text) {
+  const parsed = parseStructured(text);
+  if (parsed.kind === "xml") {
+    formatXmlWithHighlight(parsed.doc, text, outputArea);
+  } else {
+    formatJSONWithHighlight(parsed.value, outputArea);
+  }
+}
+
+function applyMinify(text) {
+  const parsed = parseStructured(text);
+  if (parsed.kind === "xml") {
+    renderMinifiedXml(parsed.doc, text);
+  } else {
+    renderMinified(parsed.value);
+  }
+}
+
+function applyTree(text) {
+  const parsed = parseStructured(text);
+  renderTree(parsed.value);
+}
+
+function applyDiff(textA, textB) {
+  const a = tryParseStructured(textA);
+  const b = tryParseStructured(textB);
+  const structured =
+    a.kind !== "text" &&
+    b.kind !== "text" &&
+    a.kind === b.kind;
+
+  if (structured) {
+    renderDiff(collectDiff(a.value, b.value), { kind: a.kind });
+    return a.kind;
+  }
+
+  renderDiff(collectTextDiff(textA, textB), { kind: "text" });
+  return "text";
+}
+
 /* =========================
    Ações
 ========================= */
@@ -1153,53 +1619,54 @@ function runFormat() {
   }
 
   try {
-    const json = smartParseJson(inputArea.value);
-    formatJSONWithHighlight(json, outputArea);
+    applyFormat(inputArea.value);
     pushHistoryEntry({ mode: "format", text: inputArea.value });
   } catch (e) {
-    showError(`JSON Inválido!\n${e.message}`);
+    showError(`Entrada inválida!\n${e.message}`);
   }
 }
 
 function runMinify() {
   try {
-    const json = smartParseJson(inputArea.value);
-    renderMinified(json);
+    applyMinify(inputArea.value);
     pushHistoryEntry({ mode: "minify", text: inputArea.value });
   } catch (e) {
-    showError(`JSON Inválido!\n${e.message}`);
+    showError(`Entrada inválida!\n${e.message}`);
   }
 }
 
 function runTree() {
   try {
-    const json = smartParseJson(inputArea.value);
-    renderTree(json);
+    applyTree(inputArea.value);
     pushHistoryEntry({ mode: "tree", text: inputArea.value });
   } catch (e) {
-    showError(`JSON Inválido!\n${e.message}`);
+    showError(`Entrada inválida!\n${e.message}`);
   }
 }
 
 function runDiff() {
   if (!diffMode) {
     setDiffMode(true);
-    showToast("Modo Diff ativo — cole JSON A e B");
+    showToast("Modo Diff ativo — cole A e B");
+    return;
+  }
+
+  const textA = inputArea.value;
+  const textB = inputAreaB.value;
+  if (!textA.trim() || !textB.trim()) {
+    showError("Preencha A e B para comparar.");
     return;
   }
 
   try {
-    const a = smartParseJson(inputArea.value);
-    const b = smartParseJson(inputAreaB.value);
-    const changes = collectDiff(a, b);
-    renderDiff(changes);
+    applyDiff(textA, textB);
     pushHistoryEntry({
       mode: "diff",
-      text: inputArea.value,
-      textB: inputAreaB.value,
+      text: textA,
+      textB: textB,
     });
   } catch (e) {
-    showError(`JSON Inválido!\n${e.message}`);
+    showError(`Não foi possível comparar!\n${e.message}`);
   }
 }
 
