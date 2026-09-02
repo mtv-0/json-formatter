@@ -21,20 +21,25 @@
     <div class="container">
       <div class="input-panel">
         <label class="input-label input-label--a" hidden>A</label>
-        <textarea
-          class="large-area large-area--input"
-          placeholder="Cole JSON ou XML aqui... (Ctrl+Enter para formatar)"
-          spellcheck="false"
-          aria-label="Entrada JSON ou XML"
-        ></textarea>
+        <div class="editor-box">
+          <div class="editor-box__gutter" aria-hidden="true"></div>
+          <textarea
+            class="large-area large-area--input"
+            placeholder="Cole JSON ou XML aqui... (Ctrl+Enter para formatar)"
+            spellcheck="false"
+            aria-label="Entrada JSON ou XML"
+          ></textarea>
+        </div>
         <label class="input-label input-label--b" hidden>B</label>
-        <textarea
-          class="large-area large-area--input-b"
-          placeholder="B: JSON, XML ou texto..."
-          spellcheck="false"
-          aria-label="Entrada B"
-          hidden
-        ></textarea>
+        <div class="editor-box editor-box--b" hidden>
+          <div class="editor-box__gutter" aria-hidden="true"></div>
+          <textarea
+            class="large-area large-area--input-b"
+            placeholder="B: JSON, XML ou texto..."
+            spellcheck="false"
+            aria-label="Entrada B"
+          ></textarea>
+        </div>
       </div>
 
       <div class="controls">
@@ -67,10 +72,13 @@
         >
           Copiar
         </button>
-        <pre
-          class="large-area large-area--output"
-          aria-label="Saída formatada"
-        ></pre>
+        <div class="editor-box editor-box--output has-inner-lines">
+          <div class="editor-box__gutter" aria-hidden="true"></div>
+          <pre
+            class="large-area large-area--output"
+            aria-label="Saída formatada"
+          ></pre>
+        </div>
       </div>
     </div>
 
@@ -127,8 +135,9 @@
           </tbody>
         </table>
         <p class="modal__hint">
-          Format, Minify e Tree aceitam JSON e XML. O Diff compara JSON, XML ou
-          texto livre.
+          Format, Minify e Tree aceitam JSON e XML — inclusive trechos de XML,
+          mesmo sem raiz única ou com tags incompletas. O Diff compara JSON, XML
+          ou texto livre.
         </p>
         <p class="modal__hint">No Mac, use <kbd>⌘</kbd> no lugar de Ctrl.</p>
       </div>
