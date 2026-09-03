@@ -1,0 +1,21 @@
+{
+  "name": "json-formatter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Formatador e comparador de JSON/XML no navegador, com diff no estilo Git.",
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes serve .",
+    "test": "node --test test/**/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "json",
+    "xml",
+    "formatter",
+    "diff"
+  ],
+  "license": "MIT"
+}

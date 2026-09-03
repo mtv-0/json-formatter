@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="src/main.css" />
+    <link rel="stylesheet" href="src/styles/index.css" />
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
-    <script defer src="src/main.js"></script>
+    <script type="module" src="src/app.js"></script>
     <title>JSON Formatter</title>
   </head>
   <body>
@@ -19,9 +19,17 @@
     </button>
 
     <div class="container">
+      <div class="diff-bar" hidden>
+        <p class="diff-summary">Cole A e B e clique em Compare</p>
+        <div class="diff-bar__actions">
+          <button type="button" class="diff-bar__copy" hidden>Copiar patch</button>
+          <button type="button" class="diff-bar__details" hidden>Detalhes</button>
+        </div>
+      </div>
+
       <div class="input-panel">
-        <label class="input-label input-label--a" hidden>A</label>
-        <div class="editor-box">
+        <div class="editor-box editor-box--a">
+          <span class="input-label input-label--a" hidden>A</span>
           <div class="editor-box__gutter" aria-hidden="true"></div>
           <textarea
             class="large-area large-area--input"
@@ -29,9 +37,10 @@
             spellcheck="false"
             aria-label="Entrada JSON ou XML"
           ></textarea>
+          <div class="diff-overlay" hidden></div>
         </div>
-        <label class="input-label input-label--b" hidden>B</label>
         <div class="editor-box editor-box--b" hidden>
+          <span class="input-label input-label--b" hidden>B</span>
           <div class="editor-box__gutter" aria-hidden="true"></div>
           <textarea
             class="large-area large-area--input-b"
@@ -39,6 +48,7 @@
             spellcheck="false"
             aria-label="Entrada B"
           ></textarea>
+          <div class="diff-overlay" hidden></div>
         </div>
       </div>
 
@@ -137,7 +147,9 @@
         <p class="modal__hint">
           Format, Minify e Tree aceitam JSON e XML — inclusive trechos de XML,
           mesmo sem raiz única ou com tags incompletas. O Diff compara JSON, XML
-          ou texto livre.
+          ou texto livre. No Diff, A e B ficam lado a lado e o Compare pinta as
+          diferenças nos próprios editores. Clique em A ou B para voltar a
+          editar; Detalhes lista cada campo.
         </p>
         <p class="modal__hint">No Mac, use <kbd>⌘</kbd> no lugar de Ctrl.</p>
       </div>
@@ -157,6 +169,16 @@
         <ul class="history-list"></ul>
         <p class="history-empty" hidden>Nenhum item salvo ainda.</p>
       </div>
+    </dialog>
+
+    <dialog class="modal modal--details" aria-labelledby="details-title">
+      <div class="modal__header">
+        <h2 id="details-title" class="modal__title">Detalhes do Diff</h2>
+        <button type="button" class="modal__close" aria-label="Fechar">
+          ×
+        </button>
+      </div>
+      <div class="modal__body modal__body--details"></div>
     </dialog>
   </body>
 </html>

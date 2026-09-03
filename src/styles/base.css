@@ -1,0 +1,127 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: #333333;
+  overflow: hidden;
+  height: 100vh;
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  color: #dcdcdc;
+}
+
+.container {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px minmax(0, 1fr);
+  align-items: stretch;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 20px;
+  gap: 20px;
+}
+
+.input-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  gap: 8px;
+}
+
+.container.is-diff {
+  grid-template-columns: minmax(0, 1fr) 110px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.container.is-diff .diff-bar {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.container.is-diff .input-panel {
+  display: contents;
+}
+
+.container.is-diff .editor-box--a {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.container.is-diff .controls {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.container.is-diff .editor-box--b {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.container.is-diff .output-panel {
+  display: none;
+}
+
+.diff-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 8px 12px;
+  background: #3a3a3a;
+  border-radius: 8px;
+}
+
+.diff-bar[hidden] {
+  display: none !important;
+}
+
+.diff-bar .diff-summary {
+  margin: 0;
+  color: #ccc;
+  font-size: 12px;
+}
+
+.diff-bar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.diff-bar__actions button {
+  font-family: inherit;
+  font-size: 12px;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  background: #555;
+  color: #fff;
+}
+
+.diff-bar__copy {
+  background: #007acc;
+}
+
+.diff-bar__copy:hover {
+  background: #1a8ad4;
+}
+
+.diff-bar__details {
+  background: #8a6d3b;
+}
+
+.diff-bar__details:hover {
+  background: #a38245;
+}
+
+.input-label {
+  flex-shrink: 0;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+.container.is-diff .input-label {
+  display: block;
+}

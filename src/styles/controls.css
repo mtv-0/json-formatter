@@ -1,0 +1,71 @@
+.controls {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+
+.controls__button {
+  padding: 8px 10px;
+  width: 100%;
+  margin: 0;
+  border-radius: 5px;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  background-color: #009578;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 12px;
+  transition: background 0.15s;
+}
+
+.controls__button:hover {
+  background: #00b894;
+}
+
+.controls__button:active {
+  background: #00705a;
+}
+
+.controls__button.is-active {
+  background: #00705a;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.25);
+}
+
+.controls__button--history {
+  background-color: #3d6a8a;
+}
+
+.controls__button--history:hover {
+  background: #4a7fa3;
+}
+
+.controls__button--history:active {
+  background: #2f5470;
+}
+
+.controls__button--diff {
+  background-color: #8a6d3b;
+}
+
+.controls__button--diff:hover {
+  background: #a38245;
+}
+
+.controls__button--diff:active,
+.controls__button--diff.is-active {
+  background: #6e562e;
+}
+
+.controls__button--clear {
+  background-color: #555;
+}
+
+.controls__button--clear:hover {
+  background: #666;
+}
+
+.controls__button--clear:active {
+  background: #444;
+}

@@ -1,0 +1,68 @@
+@media (max-width: 768px) {
+  body {
+    overflow: auto;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .container {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(40vh, 1fr) auto minmax(40vh, 1fr);
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .container.is-diff {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(36vh, 1fr) auto minmax(36vh, 1fr);
+  }
+
+  .container.is-diff .diff-bar {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .container.is-diff .editor-box--a {
+    grid-column: 1;
+    grid-row: 2;
+    min-height: 36vh;
+    height: 36vh;
+  }
+
+  .container.is-diff .controls {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .container.is-diff .editor-box--b {
+    grid-column: 1;
+    grid-row: 4;
+    min-height: 36vh;
+    height: 36vh;
+  }
+
+  .input-panel,
+  .output-panel {
+    min-height: 40vh;
+    height: 40vh;
+  }
+
+  .controls {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .controls__button {
+    flex: 1;
+    min-width: 72px;
+  }
+
+  .copy-button {
+    right: 16px;
+  }
+
+  .help-fab {
+    bottom: 16px;
+    left: 16px;
+  }
+}

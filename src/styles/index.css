@@ -1,0 +1,10 @@
+/* Folha de entrada — uma área por arquivo */
+@import "./base.css";
+@import "./editor.css";
+@import "./controls.css";
+@import "./output.css";
+@import "./tree.css";
+@import "./diff.css";
+@import "./toast.css";
+@import "./modal.css";
+@import "./responsive.css";

@@ -1,0 +1,339 @@
+/* Diff */
+.large-area--output.is-diff {
+  white-space: normal;
+  padding: 8px 0 12px;
+}
+
+.diff-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 0 0 8px;
+  padding: 4px 92px 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #444444;
+}
+
+.editor-box:hover .diff-toolbar,
+.editor-box:focus-within .diff-toolbar {
+  background: #4a4a4a;
+}
+
+.diff-views {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 6px;
+}
+
+.diff-view-btn {
+  border: none;
+  background: transparent;
+  color: #aaa;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.diff-view-btn:hover {
+  color: #eee;
+}
+
+.diff-view-btn.is-active {
+  background: #8a6d3b;
+  color: #fff;
+}
+
+.diff-summary {
+  margin: 0;
+  padding: 0;
+  border: none;
+  color: #aaa;
+  font-size: 12px;
+}
+
+.diff-pane--fields {
+  padding: 0 16px;
+}
+
+.diff-git-file {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0;
+  padding: 0;
+  font-size: 12px;
+  user-select: none;
+}
+
+.diff-git-file-a,
+.diff-git-file-b {
+  padding: 4px 12px 8px;
+  min-width: 0;
+}
+
+.diff-git-file-a {
+  color: #f48771;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.diff-git-file-b {
+  color: #3dd6b0;
+}
+
+.diff-git-hunk {
+  margin-bottom: 8px;
+}
+
+.diff-git-hunk-header {
+  padding: 4px 12px;
+  color: #9aa7ff;
+  background: rgba(86, 108, 214, 0.18);
+  font-size: 12px;
+}
+
+.diff-git-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.diff-git-cell {
+  display: grid;
+  grid-template-columns: var(--diff-ln-ch, 3ch) 1.25ch minmax(0, 1fr);
+  column-gap: 8px;
+  padding: 0 8px 0 6px;
+  min-width: 0;
+  min-height: 1.5em;
+  align-items: start;
+}
+
+.diff-git-cell--equal {
+  color: #c8c8c8;
+}
+
+.diff-git-cell--removed {
+  background: rgba(244, 135, 113, 0.16);
+  box-shadow: inset 3px 0 0 #f48771;
+}
+
+.diff-git-cell--added {
+  background: rgba(0, 149, 120, 0.16);
+  box-shadow: inset 3px 0 0 #009578;
+}
+
+.diff-git-cell--empty {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.diff-git-cell:first-child {
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.diff-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: auto;
+  padding: 28px 0 12px;
+  box-sizing: border-box;
+  font-size: 14px;
+  line-height: 1.5;
+  user-select: text;
+  cursor: text;
+}
+
+.editor-box.is-diff-overlay .diff-overlay {
+  display: block;
+}
+
+.editor-box.is-diff-overlay .editor-box__gutter,
+.editor-box.is-diff-overlay .large-area {
+  display: none;
+}
+
+.diff-overlay .diff-git-cell,
+.diff-overlay .diff-git-cell:first-child {
+  border-right: none;
+}
+
+.diff-overlay .diff-git-cell {
+  padding: 0 16px 0 12px;
+}
+
+.diff-git .brace,
+.diff-overlay .brace {
+  cursor: default;
+  min-width: 0;
+}
+
+.diff-git .brace:hover,
+.diff-overlay .brace:hover {
+  color: inherit;
+  background: transparent;
+}
+
+.diff-git-ln {
+  text-align: right;
+  color: #6e6e6e;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.diff-git-cell--removed .diff-git-ln,
+.diff-git-cell--added .diff-git-ln {
+  color: #9a9a9a;
+}
+
+.diff-git-sign {
+  user-select: none;
+  font-weight: 600;
+  text-align: center;
+}
+
+.diff-git-sign--removed {
+  color: #f48771;
+}
+
+.diff-git-sign--added {
+  color: #3dd6b0;
+}
+
+.diff-git-sign--equal,
+.diff-git-sign--empty {
+  color: transparent;
+}
+
+.diff-git-text {
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.diff-card {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #666;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.diff-card--added {
+  border-left-color: #009578;
+  background: rgba(0, 149, 120, 0.1);
+}
+
+.diff-card--removed {
+  border-left-color: #f48771;
+  background: rgba(244, 135, 113, 0.1);
+}
+
+.diff-card--changed {
+  border-left-color: #ceb250;
+  background: rgba(206, 178, 80, 0.1);
+}
+
+.diff-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.diff-tag {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  min-width: 52px;
+}
+
+.diff-card--added .diff-tag {
+  color: #3dd6b0;
+}
+
+.diff-card--removed .diff-tag {
+  color: #f48771;
+}
+
+.diff-card--changed .diff-tag {
+  color: #e6c35c;
+}
+
+.diff-path {
+  color: #9cdcfe;
+  font-weight: 600;
+}
+
+.diff-type-hint {
+  color: #888;
+  font-size: 11px;
+}
+
+.diff-block {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.diff-block--added {
+  background: rgba(0, 149, 120, 0.15);
+}
+
+.diff-block--removed {
+  background: rgba(244, 135, 113, 0.15);
+}
+
+.diff-block__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+  margin-bottom: 3px;
+}
+
+.diff-block__body {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #d4d4d4;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.diff-inline-same {
+  color: #d4d4d4;
+}
+
+.diff-inline-del {
+  background: rgba(244, 135, 113, 0.35);
+  color: #ffb4a4;
+  text-decoration: line-through;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.diff-inline-ins {
+  background: rgba(0, 149, 120, 0.35);
+  color: #7dffd0;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.diff-empty {
+  color: #888;
+  padding: 12px 16px;
+}

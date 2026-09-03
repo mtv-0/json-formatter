@@ -1,0 +1,36 @@
+export function queryAppElements() {
+  const inputBoxA = document.querySelector(".editor-box--a");
+  const inputBoxB = document.querySelector(".editor-box--b");
+  return {
+    container: document.querySelector(".container"),
+    inputArea: document.querySelector(".large-area--input"),
+    inputAreaB: document.querySelector(".large-area--input-b"),
+    inputBoxA,
+    inputBoxB,
+    inputLabelA: document.querySelector(".input-label--a"),
+    inputLabelB: document.querySelector(".input-label--b"),
+    overlayA: inputBoxA.querySelector(".diff-overlay"),
+    overlayB: inputBoxB.querySelector(".diff-overlay"),
+    diffBar: document.querySelector(".diff-bar"),
+    diffSummary: document.querySelector(".diff-bar .diff-summary"),
+    diffCopy: document.querySelector(".diff-bar__copy"),
+    diffDetails: document.querySelector(".diff-bar__details"),
+    outputArea: document.querySelector(".large-area--output"),
+    outputBox: document.querySelector(".editor-box--output"),
+    formatButton: document.querySelector(".controls__button--format"),
+    minifyButton: document.querySelector(".controls__button--minify"),
+    treeButton: document.querySelector(".controls__button--tree"),
+    diffButton: document.querySelector(".controls__button--diff"),
+    historyButton: document.querySelector(".controls__button--history"),
+    clearButton: document.querySelector(".controls__button--clear"),
+    copyButton: document.querySelector(".copy-button"),
+    helpFab: document.querySelector(".help-fab"),
+    helpModal: document.querySelector(".modal--help"),
+    historyModal: document.querySelector(".modal--history"),
+    detailsModal: document.querySelector(".modal--details"),
+    detailsBody: document.querySelector(".modal__body--details"),
+    historyList: document.querySelector(".history-list"),
+    historyEmpty: document.querySelector(".history-empty"),
+    historyClearAll: document.querySelector(".history-clear-all"),
+  };
+}

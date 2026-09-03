@@ -1,0 +1,25 @@
+.tree-line {
+  white-space: pre;
+  font-family: inherit;
+}
+
+.tree-key {
+  color: #9cdcfe;
+}
+
+.tree-value {
+  color: #ce9178;
+}
+
+.tree-value.boolean,
+.tree-value.null {
+  color: #569cd6;
+}
+
+.tree-value.number {
+  color: #b5cea8;
+}
+
+.tree-connector {
+  color: #858585;
+}
